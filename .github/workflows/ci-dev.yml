@@ -8,11 +8,13 @@ name: CI - Development Environment
 on:
   push:
     branches:
-      - develop
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate:
     name: Build & Validate - Dev
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
 
     steps:
@@ -59,7 +61,8 @@ jobs:
         run: |
           echo "=== Building Docker image (Development) ==="
           docker --version || true
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
+          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
+          docker build -f Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
           docker tag university-cs-dept-portal:dev-${{ github.sha }} university-cs-dept-portal:dev-latest
 
       # Step 5: Verify build success

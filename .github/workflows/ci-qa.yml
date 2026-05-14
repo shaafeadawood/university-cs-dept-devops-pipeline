@@ -8,11 +8,13 @@ name: CI - QA/Staging Environment
 on:
   push:
     branches:
-      - release
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate-qa:
     name: Build & Validate - QA
+    if: github.ref == 'refs/heads/release'
     runs-on: ubuntu-latest
 
     steps:
@@ -101,7 +103,8 @@ jobs:
         run: |
           echo "=== Building Docker image (QA) ==="
           docker --version || true
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
+          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
+          docker build -f Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
           docker tag university-cs-dept-portal:qa-${{ github.sha }} university-cs-dept-portal:qa-latest
 
       # Step 5: Build verification
