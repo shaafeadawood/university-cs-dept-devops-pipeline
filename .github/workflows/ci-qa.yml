@@ -14,7 +14,7 @@ jobs:
   build-and-validate-qa:
     name: Build & Validate - QA
     runs-on: ubuntu-latest
-    
+
     steps:
       # Step 1: Checkout repository code
       - name: Checkout Repository
@@ -53,7 +53,7 @@ jobs:
               [ $VALIDATION_ERRORS -eq 0 ] && echo "  ✓ PASS"
             fi
           done
-          
+
           if [ $VALIDATION_ERRORS -gt 0 ]; then
             echo ""
             echo "❌ HTML Validation FAILED with $VALIDATION_ERRORS errors"
@@ -66,46 +66,43 @@ jobs:
         run: |
           echo "=== Comprehensive CSS Validation (QA) ==="
           CSS_FILE="assets/css/style.css"
-          
+
           if [ ! -f "$CSS_FILE" ]; then
             echo "❌ ERROR: CSS file not found: $CSS_FILE"
             exit 1
           fi
-          
+
           # File size check
           FILE_SIZE=$(wc -c < "$CSS_FILE")
           echo "File size: $FILE_SIZE bytes"
-          
+
           if [ $FILE_SIZE -eq 0 ]; then
             echo "❌ ERROR: CSS file is empty"
             exit 1
           fi
-          
+
           # CSS syntax validation
           grep -q "{" "$CSS_FILE" || { echo "❌ ERROR: No CSS rules found"; exit 1; }
           grep -q "}" "$CSS_FILE" || { echo "❌ ERROR: Unmatched braces"; exit 1; }
-          
+
           # Check for brace matching
           UNCLOSED=$(grep -o "{" "$CSS_FILE" | wc -l)
           CLOSED=$(grep -o "}" "$CSS_FILE" | wc -l)
-          
+
           if [ $UNCLOSED -ne $CLOSED ]; then
             echo "❌ ERROR: Unmatched CSS braces (open: $UNCLOSED, close: $CLOSED)"
             exit 1
           fi
-          
+
           echo "✓ CSS syntax validation PASS"
 
-      # Step 4: Build Docker image using official build-push action
+      # Step 4: Build Docker image using plain `docker build` for reliability
       - name: Build Docker Image (qa)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64
-          load: true
-          tags: |
-            university-cs-dept-portal:qa-${{ github.sha }},university-cs-dept-portal:qa-latest
+        run: |
+          echo "=== Building Docker image (QA) ==="
+          docker --version || true
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
+          docker tag university-cs-dept-portal:qa-${{ github.sha }} university-cs-dept-portal:qa-latest
 
       # Step 5: Build verification
       - name: Verify Build Success - QA
