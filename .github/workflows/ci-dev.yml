@@ -8,11 +8,13 @@ name: CI - Development Environment
 on:
   push:
     branches:
-      - develop
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate:
     name: Build & Validate - Dev
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
 
     steps:

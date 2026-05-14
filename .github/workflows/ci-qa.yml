@@ -8,11 +8,13 @@ name: CI - QA/Staging Environment
 on:
   push:
     branches:
-      - release
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate-qa:
     name: Build & Validate - QA
+    if: github.ref == 'refs/heads/release'
     runs-on: ubuntu-latest
 
     steps:

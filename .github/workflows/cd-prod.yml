@@ -16,11 +16,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
+      - name: Verify root Dockerfile and Build Docker Image
         run: |
-          echo "Building Docker image for Production"
+          echo "Building Docker image for Production (validate root Dockerfile)"
+          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
           docker --version || true
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
+          docker build -f Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
 
       - name: Trigger Render Deploy (Production)
         env:
