@@ -1,0 +1,147 @@
+# GitHub Actions CI Pipeline - QA/Staging Environment
+# Branch: release
+# Triggers on every push to the release branch
+# Comprehensive validation for QA environment before production
+
+name: CI - QA/Staging Environment
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  # CI Job: Comprehensive validation for QA environment
+  build-and-validate-qa:
+    name: Build & Validate - QA
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js for validation tools
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # Step 3: Install comprehensive validation tools for QA
+      - name: Install QA Validation Tools
+        run: |
+          npm install -g stylelint
+          npm install -g html-validator-cli
+          echo "✓ QA validation tools installed"
+
+      # Step 4: Detailed HTML validation for all pages
+      - name: Validate HTML Files - QA Check
+        run: |
+          echo "=== Comprehensive HTML Validation (QA) ==="
+          VALIDATION_ERRORS=0
+          for file in pages/*.html; do
+            if [ -f "$file" ]; then
+              echo ""
+              echo "Validating: $file"
+              
+              # DOCTYPE check
+              grep -q "<!DOCTYPE html>" "$file" || { echo "  ✗ ERROR: Missing DOCTYPE"; ((VALIDATION_ERRORS++)); }
+              
+              # HTML tag check
+              grep -q "<html" "$file" || { echo "  ✗ ERROR: Missing html tag"; ((VALIDATION_ERRORS++)); }
+              
+              # Head check
+              grep -q "<head>" "$file" || { echo "  ✗ ERROR: Missing head section"; ((VALIDATION_ERRORS++)); }
+              
+              # Title check
+              grep -q "<title>" "$file" || { echo "  ✗ ERROR: Missing title"; ((VALIDATION_ERRORS++)); }
+              
+              # Body check
+              grep -q "<body>" "$file" || { echo "  ✗ ERROR: Missing body tag"; ((VALIDATION_ERRORS++)); }
+              
+              # Charset check
+              grep -q "charset" "$file" || { echo "  ✗ WARNING: Missing charset declaration"; }
+              
+              # Viewport check
+              grep -q "viewport" "$file" || { echo "  ✗ WARNING: Missing viewport meta tag"; }
+              
+              [ $VALIDATION_ERRORS -eq 0 ] && echo "  ✓ PASS"
+            fi
+          done
+          
+          if [ $VALIDATION_ERRORS -gt 0 ]; then
+            echo ""
+            echo "❌ HTML Validation FAILED with $VALIDATION_ERRORS errors"
+            exit 1
+          fi
+          echo ""
+          echo "✓ All HTML files validated successfully"
+
+      # Step 5: Detailed CSS validation for QA
+      - name: Validate CSS Files - QA Check
+        run: |
+          echo "=== Comprehensive CSS Validation (QA) ==="
+          CSS_FILE="assets/css/style.css"
+          
+          if [ ! -f "$CSS_FILE" ]; then
+            echo "❌ ERROR: CSS file not found: $CSS_FILE"
+            exit 1
+          fi
+          
+          echo "Checking: $CSS_FILE"
+          
+          # File size check
+          FILE_SIZE=$(wc -c < "$CSS_FILE")
+          echo "  File size: $FILE_SIZE bytes"
+          
+          if [ $FILE_SIZE -eq 0 ]; then
+            echo "  ❌ ERROR: CSS file is empty"
+            exit 1
+          fi
+          
+          # CSS syntax validation
+          grep -q "{" "$CSS_FILE" || { echo "  ❌ ERROR: No CSS rules found"; exit 1; }
+          grep -q "}" "$CSS_FILE" || { echo "  ❌ ERROR: Unmatched braces"; exit 1; }
+          
+          # Check for common CSS issues
+          UNCLOSED=$(grep -o "{" "$CSS_FILE" | wc -l)
+          CLOSED=$(grep -o "}" "$CSS_FILE" | wc -l)
+          
+          if [ $UNCLOSED -ne $CLOSED ]; then
+            echo "  ❌ ERROR: Unmatched CSS braces (open: $UNCLOSED, close: $CLOSED)"
+            exit 1
+          fi
+          
+          # Check for color values
+          grep -q "#[0-9a-f]\|rgb(" "$CSS_FILE" || echo "  ⚠ WARNING: No color values found"
+          
+          echo "  ✓ CSS syntax validation PASS"
+          echo "✓ CSS file validated successfully"
+
+      # Step 6: Set up Docker buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 7: Build Docker image for QA
+      - name: Build Docker Image - QA
+        run: |
+          echo "=== Building Docker Image for QA Environment ==="
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-latest .
+          echo "✓ Docker image built successfully"
+
+      # Step 8: Comprehensive build verification
+      - name: Verify Build Success - QA
+        run: |
+          echo "=== Build Verification ==="
+          IMAGES=$(docker images | grep university-cs-dept-portal | wc -l)
+          if [ $IMAGES -eq 0 ]; then
+            echo "❌ ERROR: Docker image not found"
+            exit 1
+          fi
+          echo "✓ Docker image found: $IMAGES image(s)"
+          echo ""
+          echo "Docker Images:"
+          docker image ls university-cs-dept-portal --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+          echo ""
+          echo "✓ QA environment build verification PASSED"

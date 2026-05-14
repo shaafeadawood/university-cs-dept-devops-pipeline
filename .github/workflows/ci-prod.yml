@@ -1,0 +1,222 @@
+# GitHub Actions CI Pipeline - Production Environment
+# Branch: main
+# Triggers on every push to the main branch
+# Strict validation and security checks for production deployments
+
+name: CI - Production Environment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # CI Job: Enterprise-grade validation for production environment
+  build-and-validate-prod:
+    name: Build & Validate - Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js for validation tools
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # Step 3: Install production-grade validation tools
+      - name: Install Production Validation Tools
+        run: |
+          npm install -g stylelint
+          npm install -g html-validator-cli
+          echo "✓ Production validation tools installed"
+
+      # Step 4: Strict HTML validation for production
+      - name: Validate HTML Files - Production Standard
+        run: |
+          echo "=== PRODUCTION: Strict HTML Validation ==="
+          VALIDATION_ERRORS=0
+          
+          for file in pages/*.html; do
+            if [ -f "$file" ]; then
+              echo ""
+              echo "[PROD-CHECK] Validating: $file"
+              
+              # Strict DOCTYPE check
+              if ! grep -q "<!DOCTYPE html>" "$file"; then
+                echo "  ✗ CRITICAL: Missing DOCTYPE - Production standard violation"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              # Strict HTML5 structure
+              if ! grep -q "<html" "$file"; then
+                echo "  ✗ CRITICAL: Missing html tag"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              if ! grep -q "<head>" "$file"; then
+                echo "  ✗ CRITICAL: Missing head section"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              if ! grep -q "<title>" "$file"; then
+                echo "  ✗ CRITICAL: Missing page title"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              if ! grep -q "<body>" "$file"; then
+                echo "  ✗ CRITICAL: Missing body tag"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              # Mandatory meta tags for production
+              if ! grep -q "charset" "$file"; then
+                echo "  ✗ ERROR: Missing charset meta tag - REQUIRED for production"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              if ! grep -q "viewport" "$file"; then
+                echo "  ✗ ERROR: Missing viewport meta tag - REQUIRED for production"
+                ((VALIDATION_ERRORS++))
+              fi
+              
+              # Security: Check for proper HTML structure
+              if grep -q "<script" "$file"; then
+                echo "  ⚠ INFO: Script tags detected - ensure security review"
+              fi
+              
+              [ $VALIDATION_ERRORS -eq 0 ] && echo "  ✓ PASS - Production standard met"
+            fi
+          done
+          
+          if [ $VALIDATION_ERRORS -gt 0 ]; then
+            echo ""
+            echo "❌ PRODUCTION HTML VALIDATION FAILED"
+            echo "Errors found: $VALIDATION_ERRORS"
+            echo "Cannot proceed to production deployment"
+            exit 1
+          fi
+          echo ""
+          echo "✓✓✓ PRODUCTION HTML VALIDATION PASSED ✓✓✓"
+
+      # Step 5: Strict CSS validation for production
+      - name: Validate CSS Files - Production Standard
+        run: |
+          echo "=== PRODUCTION: Strict CSS Validation ==="
+          CSS_FILE="assets/css/style.css"
+          VALIDATION_ERRORS=0
+          
+          # File existence
+          if [ ! -f "$CSS_FILE" ]; then
+            echo "❌ CRITICAL: CSS file not found: $CSS_FILE"
+            exit 1
+          fi
+          
+          echo "[PROD-CHECK] Analyzing: $CSS_FILE"
+          
+          # File size validation (production CSS should be reasonable)
+          FILE_SIZE=$(wc -c < "$CSS_FILE")
+          echo "  File size: $FILE_SIZE bytes"
+          
+          if [ $FILE_SIZE -eq 0 ]; then
+            echo "  ❌ CRITICAL: CSS file is empty"
+            ((VALIDATION_ERRORS++))
+          fi
+          
+          if [ $FILE_SIZE -lt 1000 ]; then
+            echo "  ⚠ WARNING: CSS file is unusually small (< 1KB)"
+          fi
+          
+          # CSS syntax validation
+          if ! grep -q "{" "$CSS_FILE"; then
+            echo "  ❌ CRITICAL: No CSS rules found"
+            ((VALIDATION_ERRORS++))
+          fi
+          
+          if ! grep -q "}" "$CSS_FILE"; then
+            echo "  ❌ CRITICAL: CSS syntax error - unmatched braces"
+            ((VALIDATION_ERRORS++))
+          fi
+          
+          # Brace matching validation
+          OPEN_BRACES=$(grep -o "{" "$CSS_FILE" | wc -l)
+          CLOSE_BRACES=$(grep -o "}" "$CSS_FILE" | wc -l)
+          
+          if [ $OPEN_BRACES -ne $CLOSE_BRACES ]; then
+            echo "  ❌ CRITICAL: Unmatched CSS braces (open: $OPEN_BRACES, close: $CLOSE_BRACES)"
+            ((VALIDATION_ERRORS++))
+          fi
+          
+          # Design tokens check
+          if grep -q ":root" "$CSS_FILE"; then
+            echo "  ✓ Design tokens (CSS variables) found"
+          else
+            echo "  ⚠ WARNING: No CSS variables (:root) detected"
+          fi
+          
+          # Media query check for responsive design
+          if grep -q "@media" "$CSS_FILE"; then
+            echo "  ✓ Responsive design (media queries) found"
+          else
+            echo "  ⚠ WARNING: No media queries detected"
+          fi
+          
+          if [ $VALIDATION_ERRORS -gt 0 ]; then
+            echo ""
+            echo "❌ PRODUCTION CSS VALIDATION FAILED"
+            exit 1
+          fi
+          
+          echo "  ✓ CSS syntax validation PASS"
+          echo "✓✓✓ PRODUCTION CSS VALIDATION PASSED ✓✓✓"
+
+      # Step 6: Set up Docker buildx for production
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 7: Build production Docker image
+      - name: Build Docker Image - Production
+        run: |
+          echo "=== PRODUCTION: Building Docker Image ==="
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-latest .
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:v1.0.0 .
+          echo "✓ Production Docker image built successfully"
+
+      # Step 8: Enterprise-grade build verification
+      - name: Verify Build Success - Production
+        run: |
+          echo "=== PRODUCTION: Build Verification & Health Check ==="
+          
+          # Verify images exist
+          IMAGES=$(docker images | grep university-cs-dept-portal | wc -l)
+          if [ $IMAGES -eq 0 ]; then
+            echo "❌ CRITICAL: Docker images not found"
+            exit 1
+          fi
+          echo "✓ Docker images found: $IMAGES image(s)"
+          
+          echo ""
+          echo "Production Images:"
+          docker image ls university-cs-dept-portal --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+          
+          # Verify Dockerfile exists
+          if [ ! -f "docker/Dockerfile" ]; then
+            echo "❌ CRITICAL: Dockerfile not found"
+            exit 1
+          fi
+          echo "✓ Dockerfile verified"
+          
+          # Final status
+          echo ""
+          echo "╔════════════════════════════════════════════════════════╗"
+          echo "║   ✓✓✓ PRODUCTION CI/CD VALIDATION PASSED ✓✓✓          ║"
+          echo "║                                                        ║"
+          echo "║   - HTML validation: PASSED                           ║"
+          echo "║   - CSS validation: PASSED                            ║"
+          echo "║   - Docker build: PASSED                              ║"
+          echo "║   - Production ready: YES                             ║"
+          echo "╚════════════════════════════════════════════════════════╝"

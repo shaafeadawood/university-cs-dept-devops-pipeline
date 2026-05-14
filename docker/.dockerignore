@@ -1,0 +1,22 @@
+# Ignore Git metadata and local files that should not go into the image
+.git
+.gitignore
+.DS_Store
+Thumbs.db
+.vscode/
+docker/
+
+# Editor and OS files
+*.log
+*.env
+
+# Node / package artifacts (if any) - not needed for static site
+node_modules/
+npm-debug.log
+
+# Documentation / local markdown - not necessary inside image
+*.md
+
+# Build artifacts
+dist/
+build/
