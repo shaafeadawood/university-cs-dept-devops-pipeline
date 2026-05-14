@@ -14,7 +14,7 @@ jobs:
   build-and-validate:
     name: Build & Validate - Dev
     runs-on: ubuntu-latest
-    
+
     steps:
       # Step 1: Checkout repository code
       - name: Checkout Repository
@@ -44,25 +44,23 @@ jobs:
             echo "✗ ERROR: CSS file not found: $CSS_FILE"
             exit 1
           fi
-          
+
           if [ ! -s "$CSS_FILE" ]; then
             echo "✗ ERROR: CSS file is empty"
             exit 1
           fi
-          
+
           grep -q "{" "$CSS_FILE" || (echo "✗ ERROR: Invalid CSS syntax - no opening braces" && exit 1)
           echo "✓ CSS validation completed successfully"
 
-      # Step 4: Build Docker image using official build-push action (reliable on runners)
+      # Step 4: Build Docker image using plain `docker build` for reliability
+      # Use repository root as context and explicit Dockerfile path.
       - name: Build Docker Image (dev)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64
-          load: true
-          tags: |
-            university-cs-dept-portal:dev-${{ github.sha }},university-cs-dept-portal:dev-latest
+        run: |
+          echo "=== Building Docker image (Development) ==="
+          docker --version || true
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
+          docker tag university-cs-dept-portal:dev-${{ github.sha }} university-cs-dept-portal:dev-latest
 
       # Step 5: Verify build success
       - name: Verify Build Success
