@@ -14,7 +14,7 @@ jobs:
   build-and-validate-prod:
     name: Build & Validate - Production
     runs-on: ubuntu-latest
-    
+
     steps:
       # Step 1: Checkout repository code
       - name: Checkout Repository
@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "=== PRODUCTION: Strict HTML Validation ==="
           VALIDATION_ERRORS=0
-          
+
           for file in pages/*.html; do
             if [ -f "$file" ]; then
               echo "[PROD-CHECK] Validating: $file"
@@ -76,7 +76,7 @@ jobs:
               [ $VALIDATION_ERRORS -eq 0 ] && echo "  ✓ PASS"
             fi
           done
-          
+
           if [ $VALIDATION_ERRORS -gt 0 ]; then
             echo ""
             echo "❌ PRODUCTION HTML VALIDATION FAILED with $VALIDATION_ERRORS errors"
@@ -90,68 +90,66 @@ jobs:
           echo "=== PRODUCTION: Strict CSS Validation ==="
           CSS_FILE="assets/css/style.css"
           VALIDATION_ERRORS=0
-          
+
           if [ ! -f "$CSS_FILE" ]; then
             echo "❌ CRITICAL: CSS file not found: $CSS_FILE"
             exit 1
           fi
-          
+
           # File size validation
           FILE_SIZE=$(wc -c < "$CSS_FILE")
           echo "File size: $FILE_SIZE bytes"
-          
+
           if [ $FILE_SIZE -eq 0 ]; then
             echo "❌ CRITICAL: CSS file is empty"
             ((VALIDATION_ERRORS++))
           fi
-          
+
           # CSS syntax validation
           if ! grep -q "{" "$CSS_FILE"; then
             echo "❌ CRITICAL: No CSS rules found"
             ((VALIDATION_ERRORS++))
           fi
-          
+
           if ! grep -q "}" "$CSS_FILE"; then
             echo "❌ CRITICAL: CSS syntax error - unmatched braces"
             ((VALIDATION_ERRORS++))
           fi
-          
+
           # Brace matching validation
           OPEN_BRACES=$(grep -o "{" "$CSS_FILE" | wc -l)
           CLOSE_BRACES=$(grep -o "}" "$CSS_FILE" | wc -l)
-          
+
           if [ $OPEN_BRACES -ne $CLOSE_BRACES ]; then
             echo "❌ CRITICAL: Unmatched CSS braces (open: $OPEN_BRACES, close: $CLOSE_BRACES)"
             ((VALIDATION_ERRORS++))
           fi
-          
+
           # Design tokens check
           if grep -q ":root" "$CSS_FILE"; then
             echo "✓ Design tokens (CSS variables) found"
           fi
-          
+
           # Media query check for responsive design
           if grep -q "@media" "$CSS_FILE"; then
             echo "✓ Responsive design (media queries) found"
           fi
-          
+
           if [ $VALIDATION_ERRORS -gt 0 ]; then
             echo "❌ PRODUCTION CSS VALIDATION FAILED"
             exit 1
           fi
-          
+
           echo "✓✓✓ PRODUCTION CSS VALIDATION PASSED ✓✓✓"
 
-      # Step 4: Build production Docker image using official build-push action
+      # Step 4: Build production Docker image using plain `docker build` for reliability
       - name: Build Docker Image (prod)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64
-          load: true
-          tags: |
-            university-cs-dept-portal:prod-${{ github.sha }},university-cs-dept-portal:prod-latest,university-cs-dept-portal:v1.0.0
+        run: |
+          echo "=== Building Docker image (Production) ==="
+          docker --version || true
+          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
+          docker tag university-cs-dept-portal:prod-${{ github.sha }} university-cs-dept-portal:prod-latest
+          docker tag university-cs-dept-portal:prod-${{ github.sha }} university-cs-dept-portal:v1.0.0
 
       # Step 5: Enterprise-grade build verification
       - name: Verify Build Success - Production
