@@ -159,8 +159,8 @@ jobs:
         run: |
           echo "=== PRODUCTION: Build Verification ==="
           docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^university-cs-dept-portal:' || (echo "❌ CRITICAL: Docker images not found" && exit 1)
-          if [ ! -f "docker/Dockerfile" ]; then
-            echo "❌ CRITICAL: Dockerfile not found"
+          if [ ! -f "Dockerfile" ]; then
+            echo "❌ CRITICAL: Dockerfile not found at repo root"
             exit 1
           fi
           echo "✓ Dockerfile verified"
