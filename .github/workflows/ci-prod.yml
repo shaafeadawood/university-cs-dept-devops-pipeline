@@ -8,11 +8,13 @@ name: CI - Production Environment
 on:
   push:
     branches:
-      - main
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate-prod:
     name: Build & Validate - Production
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -147,7 +149,8 @@ jobs:
         run: |
           echo "=== Building Docker image (Production) ==="
           docker --version || true
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
+          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
+          docker build -f Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
           docker tag university-cs-dept-portal:prod-${{ github.sha }} university-cs-dept-portal:prod-latest
           docker tag university-cs-dept-portal:prod-${{ github.sha }} university-cs-dept-portal:v1.0.0
 
@@ -156,8 +159,8 @@ jobs:
         run: |
           echo "=== PRODUCTION: Build Verification ==="
           docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^university-cs-dept-portal:' || (echo "❌ CRITICAL: Docker images not found" && exit 1)
-          if [ ! -f "docker/Dockerfile" ]; then
-            echo "❌ CRITICAL: Dockerfile not found"
+          if [ ! -f "Dockerfile" ]; then
+            echo "❌ CRITICAL: Dockerfile not found at repo root"
             exit 1
           fi
           echo "✓ Dockerfile verified"
