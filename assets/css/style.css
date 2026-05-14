@@ -3,7 +3,7 @@
   ======================================== */
 
 /* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap");
 
 /* 1. CSS RESET & BOX SIZING */
 * {
@@ -60,10 +60,10 @@ html {
   --transition-fast: 0.18s ease;
   --transition-base: 0.28s ease;
   --transition-slow: 0.4s ease;
-  
+
   /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
 }
 
 /* 3. BASE TYPOGRAPHY */
@@ -154,17 +154,37 @@ a:hover {
   box-sizing: border-box;
 }
 @media (max-width: 768px) {
-  .container { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
 }
 
 .section {
   padding: var(--space-2xl) 0;
 }
 
-.section-header { text-align: center; max-width: 620px; margin: 0 auto 3.5rem; }
-.section-header--left { text-align: left; margin-left: 0; }
-.section-header::before { content: ''; display: block; width: 36px; height: 3px; background: var(--color-accent); border-radius: 2px; margin: 0 auto 0.75rem; }
-.section-header--left::before { margin: 0 0 0.75rem; }
+.section-header {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 3.5rem;
+}
+.section-header--left {
+  text-align: left;
+  margin-left: 0;
+}
+.section-header::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  margin: 0 auto 0.75rem;
+}
+.section-header--left::before {
+  margin: 0 0 0.75rem;
+}
 
 .eyebrow-label {
   font-family: var(--font-sans);
@@ -394,7 +414,7 @@ a:hover {
   border-left: 6px solid transparent;
 }
 .card-left-border::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -404,10 +424,15 @@ a:hover {
   border-top-left-radius: var(--radius-md);
   border-bottom-left-radius: var(--radius-md);
   transform-origin: left;
-  transition: transform var(--transition-base), opacity var(--transition-base);
+  transition:
+    transform var(--transition-base),
+    opacity var(--transition-base);
   opacity: 0.9;
 }
-.card-left-border:hover::before { transform: scaleY(1.02); opacity: 1; }
+.card-left-border:hover::before {
+  transform: scaleY(1.02);
+  opacity: 1;
+}
 
 .card-icon {
   width: 48px;
@@ -487,10 +512,20 @@ a:hover {
 }
 
 .hero-full::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(600px 300px at 10% 20%, rgba(255,255,255,0.06), transparent 20%), radial-gradient(500px 260px at 90% 80%, rgba(0,0,0,0.12), transparent 30%);
+  background:
+    radial-gradient(
+      600px 300px at 10% 20%,
+      rgba(255, 255, 255, 0.06),
+      transparent 20%
+    ),
+    radial-gradient(
+      500px 260px at 90% 80%,
+      rgba(0, 0, 0, 0.12),
+      transparent 30%
+    );
   mix-blend-mode: overlay;
   pointer-events: none;
 }
@@ -730,10 +765,21 @@ a:hover {
   align-items: start;
 }
 .timeline-item .timeline-icon {
-  width: 48px; height: 48px; border-radius: 50%; background: var(--color-primary); display: flex; align-items:center; justify-content:center; color:#fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
 }
 .sidebar-card {
-  background: var(--color-surface); border: 1px solid var(--color-border); padding: var(--space-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Contact layout (form + info column) */
@@ -743,19 +789,60 @@ a:hover {
   gap: var(--space-lg);
   align-items: start;
 }
-.contact-form-wrapper { background: var(--color-surface); padding: var(--space-lg); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
-.contact-info-stack { display:flex; flex-direction: column; gap: var(--space-md); }
-.contact-info { display:flex; gap: var(--space-md); align-items: center; padding: 0.5rem; border-radius: 8px; background: rgba(15,35,71,0.03); }
-.contact-info .icon { width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:8px; background: var(--color-primary); color:#fff; }
+.contact-form-wrapper {
+  background: var(--color-surface);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.contact-info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.contact-info {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(15, 35, 71, 0.03);
+}
+.contact-info .icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+}
 
 @media (max-width: 900px) {
-  .admissions-layout, .contact-layout { grid-template-columns: 1fr; }
-  .admissions-layout .sidebar-card, .contact-layout .contact-info-stack { width: 100%; }
+  .admissions-layout,
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+  .admissions-layout .sidebar-card,
+  .contact-layout .contact-info-stack {
+    width: 100%;
+  }
 }
 
 /* Small polish: subtle footer stripe */
-.footer { position: relative; }
-.footer::before { content: ''; position: absolute; left:0; right:0; top:0; height:6px; background: linear-gradient(90deg, var(--color-accent), #b98f12); }
+.footer {
+  position: relative;
+}
+.footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--color-accent), #b98f12);
+}
 
 /* End custom additions */
 .form-group select,
