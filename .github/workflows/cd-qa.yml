@@ -10,7 +10,7 @@ jobs:
   deploy-qa:
     name: Deploy → QA (Render)
     runs-on: ubuntu-latest
-    environment: QA
+    environment: release
 
     steps:
       - name: Checkout Repository

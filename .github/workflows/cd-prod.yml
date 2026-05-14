@@ -10,7 +10,7 @@ jobs:
   deploy-production:
     name: Deploy → Production (Render)
     runs-on: ubuntu-latest
-    environment: Production
+    environment: production
 
     steps:
       - name: Checkout Repository

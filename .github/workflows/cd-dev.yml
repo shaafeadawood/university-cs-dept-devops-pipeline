@@ -10,7 +10,7 @@ jobs:
   deploy-development:
     name: Deploy → Development (Render)
     runs-on: ubuntu-latest
-    environment: Development
+    environment: development
 
     steps:
       # Checkout repository
