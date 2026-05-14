@@ -96,26 +96,20 @@ jobs:
           
           echo "✓ CSS syntax validation PASS"
 
-      # Step 4: Set up Docker buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      # Step 4: Build Docker image using official build-push action
+      - name: Build Docker Image (qa)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: |
+            university-cs-dept-portal:qa-${{ github.sha }},university-cs-dept-portal:qa-latest
 
-      # Step 5: Build Docker image for QA
-      - name: Build Docker Image - QA
-        run: |
-          echo "=== Building Docker Image for QA Environment ==="
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:qa-latest .
-          echo "✓ Docker image built successfully"
-
-      # Step 6: Build verification
+      # Step 5: Build verification
       - name: Verify Build Success - QA
         run: |
           echo "=== Build Verification (QA) ==="
-          IMAGES=$(docker images | grep university-cs-dept-portal | wc -l)
-          if [ $IMAGES -eq 0 ]; then
-            echo "❌ ERROR: Docker image not found"
-            exit 1
-          fi
-          echo "✓ Docker images found: $IMAGES image(s)"
+          docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^university-cs-dept-portal:' || (echo "❌ ERROR: Docker image not found" && exit 1)
           echo "✓ QA environment build verification PASSED"

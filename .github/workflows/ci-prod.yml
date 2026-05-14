@@ -142,43 +142,25 @@ jobs:
           
           echo "✓✓✓ PRODUCTION CSS VALIDATION PASSED ✓✓✓"
 
-      # Step 4: Set up Docker buildx for production
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      # Step 4: Build production Docker image using official build-push action
+      - name: Build Docker Image (prod)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: |
+            university-cs-dept-portal:prod-${{ github.sha }},university-cs-dept-portal:prod-latest,university-cs-dept-portal:v1.0.0
 
-      # Step 5: Build production Docker image
-      - name: Build Docker Image - Production
-        run: |
-          echo "=== PRODUCTION: Building Docker Image ==="
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-${{ github.sha }} .
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:prod-latest .
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:v1.0.0 .
-          echo "✓ Production Docker image built successfully"
-
-      # Step 6: Enterprise-grade build verification
+      # Step 5: Enterprise-grade build verification
       - name: Verify Build Success - Production
         run: |
           echo "=== PRODUCTION: Build Verification ==="
-          
-          IMAGES=$(docker images | grep university-cs-dept-portal | wc -l)
-          if [ $IMAGES -eq 0 ]; then
-            echo "❌ CRITICAL: Docker images not found"
-            exit 1
-          fi
-          echo "✓ Docker images found: $IMAGES image(s)"
-          
+          docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^university-cs-dept-portal:' || (echo "❌ CRITICAL: Docker images not found" && exit 1)
           if [ ! -f "docker/Dockerfile" ]; then
             echo "❌ CRITICAL: Dockerfile not found"
             exit 1
           fi
           echo "✓ Dockerfile verified"
-          
-          echo ""
-          echo "╔════════════════════════════════════════════════════════╗"
-          echo "║   ✓✓✓ PRODUCTION CI/CD VALIDATION PASSED ✓✓✓          ║"
-          echo "║                                                        ║"
-          echo "║   - HTML validation: PASSED                           ║"
-          echo "║   - CSS validation: PASSED                            ║"
-          echo "║   - Docker build: PASSED                              ║"
-          echo "║   - Production ready: YES                             ║"
-          echo "╚════════════════════════════════════════════════════════╝"
+          echo "✓ Production CI/CD VALIDATION PASSED"
