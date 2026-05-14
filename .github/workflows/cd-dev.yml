@@ -18,11 +18,12 @@ jobs:
         uses: actions/checkout@v4
 
       # Build Docker image locally (ensures Dockerfile is valid)
-      - name: Build Docker Image
+      - name: Verify root Dockerfile and Build Docker Image
         run: |
-          echo "Building Docker image for Development"
+          echo "Building Docker image for Development (validate root Dockerfile)"
+          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
           docker --version || true
-          docker build -f docker/Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
+          docker build -f Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
 
       # Trigger a Render deploy via API. Requires secrets: RENDER_API_KEY, RENDER_SERVICE_ID_DEV
       - name: Trigger Render Deploy (Development)

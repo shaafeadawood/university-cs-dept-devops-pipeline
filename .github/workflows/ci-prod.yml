@@ -8,11 +8,13 @@ name: CI - Production Environment
 on:
   push:
     branches:
-      - main
+      - "**"
+  workflow_dispatch:
 
 jobs:
   build-and-validate-prod:
     name: Build & Validate - Production
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
