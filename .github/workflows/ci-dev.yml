@@ -1,7 +1,7 @@
 # GitHub Actions CI Pipeline - Development Environment
 # Branch: develop
 # Triggers on every push to the develop branch
-# Validates HTML/CSS and builds Docker image for development
+# Lightweight validation and Docker build for development
 
 name: CI - Development Environment
 
@@ -11,7 +11,6 @@ on:
       - develop
 
 jobs:
-  # CI Job: Validate and build for development environment
   build-and-validate:
     name: Build & Validate - Dev
     runs-on: ubuntu-latest
@@ -21,65 +20,54 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js for CSS/HTML validation tools
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      # Step 3: Install validation tools
-      - name: Install Validation Tools
-        run: |
-          npm install -g stylelint
-          npm install -g html-validator-cli
-
-      # Step 4: Validate HTML files
+      # Step 2: Validate HTML files
       - name: Validate HTML Files
         run: |
-          echo "Validating HTML files in pages directory..."
+          echo "=== Validating HTML files (Development) ==="
           for file in pages/*.html; do
             if [ -f "$file" ]; then
               echo "Checking: $file"
-              # Basic HTML validation - check for required elements
-              grep -q "<!DOCTYPE html>" "$file" || (echo "ERROR: Missing DOCTYPE in $file" && exit 1)
-              grep -q "<html" "$file" || (echo "ERROR: Missing html tag in $file" && exit 1)
-              grep -q "<body>" "$file" || (echo "ERROR: Missing body tag in $file" && exit 1)
+              grep -q "<!DOCTYPE html>" "$file" || (echo "✗ ERROR: Missing DOCTYPE in $file" && exit 1)
+              grep -q "<html" "$file" || (echo "✗ ERROR: Missing html tag in $file" && exit 1)
+              grep -q "<body>" "$file" || (echo "✗ ERROR: Missing body tag in $file" && exit 1)
+              echo "  ✓ PASS"
             fi
           done
-          echo "✓ HTML validation completed"
+          echo "✓ HTML validation completed successfully"
 
-      # Step 5: Validate CSS files
+      # Step 3: Validate CSS files
       - name: Validate CSS Files
         run: |
-          echo "Validating CSS files..."
-          if [ -f "assets/css/style.css" ]; then
-            echo "Checking: assets/css/style.css"
-            # Basic CSS validation - check file exists and is not empty
-            if [ ! -s "assets/css/style.css" ]; then
-              echo "ERROR: CSS file is empty"
-              exit 1
-            fi
-            # Check for valid CSS syntax markers
-            grep -q "{" "assets/css/style.css" || (echo "ERROR: Invalid CSS syntax" && exit 1)
-            echo "✓ CSS validation completed"
+          echo "=== Validating CSS files (Development) ==="
+          CSS_FILE="assets/css/style.css"
+          if [ ! -f "$CSS_FILE" ]; then
+            echo "✗ ERROR: CSS file not found: $CSS_FILE"
+            exit 1
           fi
+          
+          if [ ! -s "$CSS_FILE" ]; then
+            echo "✗ ERROR: CSS file is empty"
+            exit 1
+          fi
+          
+          grep -q "{" "$CSS_FILE" || (echo "✗ ERROR: Invalid CSS syntax - no opening braces" && exit 1)
+          echo "✓ CSS validation completed successfully"
 
-      # Step 6: Set up Docker buildx for multi-platform support
+      # Step 4: Set up Docker buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
-      # Step 7: Build Docker image for development
+      # Step 5: Build Docker image for development
       - name: Build Docker Image
         run: |
-          echo "Building Docker image for development..."
+          echo "=== Building Docker Image (Development) ==="
           docker build -f docker/Dockerfile -t university-cs-dept-portal:dev-${{ github.sha }} .
           docker build -f docker/Dockerfile -t university-cs-dept-portal:dev-latest .
+          echo "✓ Docker image built successfully"
 
-      # Step 8: Verify Docker image build success
+      # Step 6: Verify build success
       - name: Verify Build Success
         run: |
-          echo "Verifying Docker image..."
-          docker images | grep university-cs-dept-portal
-          echo "✓ Docker image built successfully"
-          echo "Images:"
-          docker image ls university-cs-dept-portal --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+          echo "=== Verifying Build (Development) ==="
+          docker images | grep university-cs-dept-portal || (echo "✗ ERROR: Image not found" && exit 1)
+          echo "✓ Development CI Pipeline PASSED"
