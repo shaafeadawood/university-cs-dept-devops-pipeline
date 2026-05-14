@@ -28,16 +28,21 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_QA }}
         run: |
+          echo "Validating Render secrets for QA"
+          if [ -z "$RENDER_API_KEY" ]; then echo "✗ ERROR: missing secret RENDER_API_KEY" && exit 1; fi
+          if [ -z "$SERVICE_ID" ]; then echo "✗ ERROR: missing secret RENDER_SERVICE_ID_QA" && exit 1; fi
+
           echo "Triggering Render deploy for service: $SERVICE_ID"
-          HTTP_CODE=$(curl -s -o /tmp/render_resp -w "%{http_code}" -X POST \
+          HTTP_CODE=$(curl -s -m 30 -o /tmp/render_resp -w "%{http_code}" -X POST \
             "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{}')
 
           echo "Render API HTTP status: $HTTP_CODE"
+          echo "Render API response:"; cat /tmp/render_resp || true
           if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "Render deploy failed. Response:"; cat /tmp/render_resp
+            echo "Render deploy failed (HTTP $HTTP_CODE). See response above."
             exit 1
           fi
 
