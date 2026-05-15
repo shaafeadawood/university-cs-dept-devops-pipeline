@@ -1,49 +1,55 @@
-name: CD - QA/Staging
+name: CD - QA
 
-# Trigger: pushes to the release branch
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI - QA/Staging
+    types:
+      - completed
     branches:
       - release
 
 jobs:
-  deploy-qa:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Deploy → QA (Render)
     runs-on: ubuntu-latest
-    environment: release
+    environment: QA
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: release
 
-      - name: Verify root Dockerfile and Build Docker Image
-        run: |
-          echo "Building Docker image for QA (validate root Dockerfile)"
-          if [ ! -f Dockerfile ]; then echo "✗ ERROR: Dockerfile missing at repo root" && exit 1; fi
-          docker --version || true
-          docker build -f Dockerfile -t university-cs-dept-portal:qa-${{ github.sha }} .
-
-      - name: Trigger Render Deploy (QA)
+      - name: Deploy to QA
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_QA }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_QA }}
         run: |
-          echo "Validating Render secrets for QA"
-          if [ -z "$RENDER_API_KEY" ]; then echo "✗ ERROR: missing secret RENDER_API_KEY" && exit 1; fi
-          if [ -z "$SERVICE_ID" ]; then echo "✗ ERROR: missing secret RENDER_SERVICE_ID_QA" && exit 1; fi
-
-          echo "Triggering Render deploy for service: $SERVICE_ID"
-          HTTP_CODE=$(curl -s -m 30 -o /tmp/render_resp -w "%{http_code}" -X POST \
-            "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}')
-
-          echo "Render API HTTP status: $HTTP_CODE"
-          echo "Render API response:"; cat /tmp/render_resp || true
-          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "Render deploy failed (HTTP $HTTP_CODE). See response above."
+          echo "=== Deploying to QA ==="
+          
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "❌ ERROR: Missing required Render secrets"
             exit 1
           fi
-
-          echo "Render deploy triggered successfully"
+          
+          echo "Triggering Render deploy for service: $RENDER_SERVICE_ID"
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Accept: application/json" \
+            -d '{}')
+          
+          HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+          
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "❌ Render deployment failed"
+            exit 1
+          fi
+          
+          echo "✅ QA deployment triggered successfully"
